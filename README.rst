@@ -14,8 +14,8 @@ HTML
 
 .. code:: HTML
 
-    <video controls="controls" width="320" height="176">
-        <source src="jellies.mp4" type="video/mp4" />
+    <video width="320" height="176" controls>
+        <source src="jellies.mp4" type="video/mp4"/>
         <track src="jellies.srt" kind="subtitle" srclang="en-US" label="English"/>
     </video>
 
