@@ -5,7 +5,9 @@ VideoSub: HTML5 Video with SRT Subtitles
 Code
 ====
 
-<script src="videosub.js"></script>
+.. code:: HTML
+    
+    <script src="videosub.js"></script>
 
 HTML
 ====
