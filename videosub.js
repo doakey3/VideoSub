@@ -1,33 +1,3 @@
-// ==============================================================================
-// VideoSub v0.9.9
-// by Thomas Sturm, June 2010 - August 2012
-// http://www.storiesinflight.com
-// License MIT
-//
-// Ender is licensed under MIT - copyright 2012 Dustin Diaz & Jacob Thornton
-// http://ender.no.de/
-//
-// Standards compliant video subtitles for HTML5 video tags. 
-// Just add this library to your webpage, it will scan your page for HTML5
-// video tags and if they contain a <track> subtitle, it will load and parse
-// the subtitle file (only if it is in SRT standard) and display the subtitles over
-// the playing video. The library can handle multiple video files in one page.
-// Currently, VideoSub will kick in for all browsers even if they have native track
-// support, since none are expected to support .SRT files at all.
-// ==============================================================================
-
-/*!
-  * =======================================================
-  * Ender: open module JavaScript framework
-  * copyright Dustin Diaz & Jacob Thornton 2011 (@ded @fat)
-  * https://ender.no.de
-  * License MIT
-  * Module's individual licenses still apply
-  * Build: ender build jeesh reqwest
-  * =======================================================
-  */
-
-
 // check for video tags and show subtitle track if the browser doesn't know how
 (function (w) {
 	// integrated Ender library
@@ -75,7 +45,9 @@
 				};
 			};
 			if (subtitlesrc.indexOf('.srt') != -1) {									// we have a track tag and it's a .srt file
-				var videowidth = $VIDEOSUB(el).attr('width');							// set subtitle div as wide as video
+				var videowidth = $VIDEOSUB(el).attr('width');
+                var videoheight = $VIDEOSUB(el).attr('height');
+                var bottom = Math.ceil(videoheight * 0.05).toString() + 'px';
 				var fontsize = 12;
 				if (videowidth > 400) {
 					fontsize = fontsize + Math.ceil((videowidth - 400) / 100);
@@ -91,7 +63,7 @@
 				var subcontainer = w.document.createElement("div");
 				$VIDEOSUB(subcontainer).css({
 					'position': 'absolute',
-					'bottom': '34px',
+					'bottom': bottom,
 					'width': (videowidth-50)+'px',
 					'padding': '0 25px 0 25px',
 					'textAlign': 'center',
@@ -100,7 +72,8 @@
 					'fontFamily': 'Helvetica, Arial, sans-serif',
 					'fontSize': fontsize+'px',
 					'fontWeight': 'bold',
-					'textShadow': '-1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black'
+					'textShadow': '#000000 1px 1px 0px',
+                    'pointer-events': 'none',
 				});
 				$VIDEOSUB(subcontainer).addClass('videosubbar');
 				$VIDEOSUB(subcontainer).appendTo(videocontainer);
@@ -108,11 +81,11 @@
 				// called on AJAX load onComplete (to work around element reference issues)
 				el.update = function(req) { 
 					el.subtitles = new Array();
-					records = req.split('\n\r');
+					records = req.split('\n\n');
 					for (var r=0;r<records.length;r++) {
-						record = records[r];
+                        record = records[r];
 						el.subtitles[r] = new Array();
-						el.subtitles[r] = record.split('\r');
+						el.subtitles[r] = record.split('\n');
 					}
 				}
 					
@@ -126,8 +99,18 @@
 	
 				el.subcount = 0;
 
-				// update position depending on user actions
-				function update_position(an_event){
+				// add event handler to be called when play button is pressed
+				$VIDEOSUB(el).addListener('play', function(an_event){
+					el.subcount = 0;
+				});
+
+				// add event handler to be called when video is done
+				$VIDEOSUB(el).addListener('ended', function(an_event){
+					el.subcount = 0;
+				});
+
+				// add event handler to be called when the video timecode has jumped
+				$VIDEOSUB(el).addListener('seeked', function(an_event){
 					el.subcount = 0;
 					while (videosub_timecode_max(el.subtitles[el.subcount][1]) < this.currentTime.toFixed(1)) {
 						el.subcount++;
@@ -136,47 +119,23 @@
 							break;
 						}
 					}
-				};
-				$VIDEOSUB(el).addListener('play', update_position);
-				$VIDEOSUB(el).addListener('ended', update_position);
-				$VIDEOSUB(el).addListener('seeked', update_position);
-
+				});
+                
+                subcontainer.enabled = false;
+                
 				// add event handler to be called while video is playing
 				$VIDEOSUB(el).addListener('timeupdate', function(an_event){
 					var subtitle = '';
 					// check if the next subtitle is in the current time range
 					if (this.currentTime.toFixed(1) > videosub_timecode_min(el.subtitles[el.subcount][1])  &&  this.currentTime.toFixed(1) < videosub_timecode_max(el.subtitles[el.subcount][1])) {
-						// a subtitle element countains metadata on the first
-						// two lines (index and timing information); we skip
-						// those two lines and display the rest
-						var full = el.subtitles[el.subcount];
-						var text = full.slice(2, full.length);
-						subtitle = text.join('<br>');
+                        subtitle = el.subtitles[el.subcount].slice(2, el.subtitles[el.subcount].length).join('<br>')
 					}
 					// is there a next timecode?
 					if (this.currentTime.toFixed(1) > videosub_timecode_max(el.subtitles[el.subcount][1])  && el.subcount < (el.subtitles.length-1)) {
 						el.subcount++;
 					}
 					// update subtitle div	
-          if(this.nextSibling.innerHTML != subtitle){
-              this.nextSibling.innerHTML = subtitle;
-
-              //create and dispatch a subtitlechanged event
-              if(window.CustomEvent){//only dispatch the event if the browser supports it
-                  var event = new CustomEvent("subtitlechanged",{
-                      detail:{
-                          target:this.nextSibling,//target div where the subtitle appears
-                          video:this,//video div
-                          content:subtitle,//content of the subtitle (subtitle text)
-                          atTime:this.currentTime,//timecode of the video at the moment of change
-                      },
-                      bubbles:true,
-                      cancelable:true
-                  });
-
-                  this.dispatchEvent(event);
-              }
-          }
+					this.nextSibling.innerHTML = subtitle;
 				});
 
 			}
