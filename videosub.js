@@ -1,15 +1,4 @@
 (function(window) {
-    function get_pos(element) {
-        var x = 0;
-        var y = 0;
-        while (element != null) {
-            x += element.offsetLeft;
-            y += element.offsetTop;
-            element = element.offsetParent;
-        }
-        return [x, y];
-    }
-
     function tc2secs(tc) {
         //Convert a srt timecode '00:00:00,000' to seconds
         var hours = parseFloat(tc.split(':')[0]) * 3600;
@@ -35,14 +24,18 @@
     }
     
     function position_subtitle(video, subcontainer) {
-        var video_x = get_pos(video)[0];
-        var video_y = get_pos(video)[1];
+        var rect = video.getBoundingClientRect();
+        var height = rect.bottom - rect.top;
+        var width = rect.right - rect.left;
         
-        subcontainer.style.width = video.offsetWidth.toString() + 'px';
+        var subrect = subcontainer.getBoundingClientRect();
+        var subheight = subrect.bottom - subrect.top;
         
-        subcontainer.style.left = video_x.toString() + 'px';
-        subcontainer.style.top = (video_y + video.offsetHeight - subcontainer.offsetHeight).toString() + 'px';
-        var fontsize = 12 + Math.ceil((video.offsetWidth - 400) / 100)
+        subcontainer.style.width = width.toString() + 'px';
+        
+        subcontainer.style.left = rect.left.toString() + 'px';
+        subcontainer.style.top = (rect.top + height - subheight).toString() + 'px';
+        var fontsize = 12 + Math.ceil((width - 400) / 100)
         subcontainer.style.fontSize = fontsize.toString() + 'px';
     }
     
@@ -69,7 +62,6 @@
                 subcontainer.style.pointerEvents = 'none';
 
                 document.documentElement.appendChild(subcontainer);
-                position_subtitle(video, subcontainer);
                 
                 video.addEventListener('timeupdate', function(event) {
                     sub = '';
