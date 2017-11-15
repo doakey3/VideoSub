@@ -83,7 +83,7 @@
         var videos = document.getElementsByTagName('video');
         for (var i = 0; i < videos.length; i++) {
             var subtitle_src = videos[0].querySelector('track').src;
-            if (subtitle_src) {
+            if (subtitle_src && subtitle_src.slice(subtitle_src.length - 3, subtitle_src.length) == 'srt') {
                 process_video(videos[i]);
             }
         }
